@@ -6,7 +6,7 @@ A Python command-line tool to calculate folder sizes, display them in a readable
 
 *   **Interactive Menu:** Easy-to-use command-line interface to choose actions.
 *   **Accurate Size Calculation:** Recursively calculates the total size of folders, including all nested files and subfolders.
-*   **Human-Readable Output:** Displays sizes in familiar units (B, KB, MB, GB, TB, etc.).
+*   **-Readable Output:** Displays sizes in familiar units (B, KB, MB, GB, TB, etc.).
 *   **Three Main Actions:**
     1.  **List Subfolder Sizes:** Select a parent directory and view a list of its immediate subfolders along with their calculated sizes.
     2.  **Rename Multiple Subfolders:** Select a parent directory, calculate the size of its immediate subfolders, and (after confirmation) rename them to `FolderName [Size]`.
