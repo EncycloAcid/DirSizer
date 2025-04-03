@@ -45,5 +45,5 @@ A Python command-line tool to calculate folder sizes, display them in a readable
 ## License
 
 
-Example:
+
 This project is licensed under the MIT License - see the LICENSE.md file for details.
