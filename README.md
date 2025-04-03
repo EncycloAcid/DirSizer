@@ -1,4 +1,4 @@
-# 📁 Folder Size Utility (with Rich UI)
+# 📁 DirSizer  (with Rich UI)
 
 A Python command-line tool featuring a Rich-enhanced interface to calculate folder sizes, display them clearly, and optionally rename folders to include their size information.
 
@@ -53,7 +53,7 @@ The renaming features (Options 2 and 3) **permanently modify folder names** on y
 
 ## How to Use
 
-1.  **Download/Clone:** Get the script file (e.g., `folder_size_utility.py`) onto your computer.
+1.  **Download/Clone:** Get the script file (e.g., `DirSizer.py`) onto your computer.
 2.  **Open Terminal/Command Prompt:** Launch your terminal (macOS/Linux) or command prompt (Windows).
 3.  **Navigate:** Use the `cd` command to go to the directory where you saved the script file.
     ```bash
@@ -61,7 +61,7 @@ The renaming features (Options 2 and 3) **permanently modify folder names** on y
     ```
 4.  **Run Script:** Execute the script using Python 3.
     ```bash
-    python folder_size_utility.py
+    DirSizer.py
     ```
     *(You might need to use `python3` instead of `python` depending on your system setup)*
 5.  **Use Menu:** The script will display the main menu in your terminal. Enter the number corresponding to the action you want (1, 2, 3, or 4 to exit).
