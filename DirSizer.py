@@ -5,21 +5,17 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 import time
-from pathlib import Path # Using pathlib for easier path manipulation
+from pathlib import Path
 
-# Rich imports
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.table import Table
 from rich.rule import Rule
 from rich.text import Text
-from rich import print # Use rich's print function
+from rich import print
 
-# --- Initialize Rich Console ---
 console = Console()
-
-# --- Helper Functions (format_size, check_if_already_renamed unchanged) ---
 
 def format_size(size_bytes):
     """Converts a size in bytes to a human-readable format (KB, MB, GB, etc.)."""
@@ -48,13 +44,10 @@ def get_folder_size(folder_path: Path):
     total_size = 0
     items_skipped = 0
     try:
-        for entry in os.scandir(folder_path): # scandir is generally faster
+        for entry in os.scandir(folder_path):
             entry_path = Path(entry.path)
             try:
                 if entry.is_dir(follow_symlinks=False):
-                    # Recurse: We don't pass the progress object down here
-                    # to avoid complexity and potential slowdown in deep recursion.
-                    # Progress is handled at the top level iterating through folders.
                     sub_size, sub_skipped = get_folder_size(entry_path)
                     total_size += sub_size
                     items_skipped += sub_skipped
@@ -63,13 +56,11 @@ def get_folder_size(folder_path: Path):
                         total_size += entry_path.stat(follow_symlinks=False).st_size
                     except OSError:
                          items_skipped += 1
-                         continue # Skip this file if stat fails
+                         continue
             except OSError:
-                # Error scanning entry (e.g., permission on subfolder)
                 items_skipped += 1
                 continue
     except OSError as e:
-         # Error accessing the top-level folder_path passed to the function
          console.print(f"\n[[bold yellow]Warning[/]]: Error accessing content within [cyan]'{folder_path.name}'[/]: {e}")
          return total_size, items_skipped + 1
     return total_size, items_skipped
@@ -79,17 +70,13 @@ def select_directory(title="Select Folder") -> str | None:
     root = tk.Tk()
     root.withdraw()
     root.attributes('-topmost', True)
-    # Provide a sensible initial directory if possible (e.g., user's home)
     initial_dir = Path.home()
     try:
         folder_selected = filedialog.askdirectory(title=title, initialdir=str(initial_dir))
-    except Exception: # Fallback if initialdir fails
+    except Exception:
          folder_selected = filedialog.askdirectory(title=title)
     root.destroy()
     return folder_selected
-
-
-# --- Rich-Enhanced Action Functions ---
 
 def list_folders_with_sizes():
     """Action 1: List subfolders with sizes using Rich."""
@@ -100,7 +87,7 @@ def list_folders_with_sizes():
         console.print("[yellow]No directory selected. Returning to menu.[/]")
         return
 
-    target_directory = Path(target_directory_str).resolve() # Use absolute path
+    target_directory = Path(target_directory_str).resolve()
 
     if not target_directory.is_dir():
         console.print(f"[bold red]Error:[/bold red] Selected path is not a valid directory: [cyan]{target_directory}[/]")
@@ -111,8 +98,6 @@ def list_folders_with_sizes():
     folders_to_scan = []
     total_skipped_in_scan = 0
     try:
-        # Scan for immediate subdirectories first
-        # Use status for this initial scan as it's usually fast
         with console.status("[bold green]Finding subdirectories..."):
             for item in target_directory.iterdir():
                 if item.is_dir():
@@ -124,9 +109,8 @@ def list_folders_with_sizes():
 
         console.print(f"Found {len(folders_to_scan)} subfolders. Calculating sizes...")
 
-        results_data = [] # Store dicts: {name, path, size_str, skipped, error}
+        results_data = []
 
-        # Use Rich Progress for size calculation
         with Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
@@ -134,7 +118,7 @@ def list_folders_with_sizes():
             TimeRemainingColumn(),
             TimeElapsedColumn(),
             console=console,
-            transient=True # Clear progress bar when done
+            transient=True
         ) as progress:
             scan_task = progress.add_task("[cyan]Calculating...", total=len(folders_to_scan))
 
@@ -145,7 +129,7 @@ def list_folders_with_sizes():
 
                 current_folder_skipped = 0
                 error_msg = None
-                formatted_size = "[grey50]N/A[/]" # Default if error occurs
+                formatted_size = "[grey50]N/A[/]"
 
                 try:
                     size_bytes, skipped = get_folder_size(folder_path)
@@ -165,7 +149,6 @@ def list_folders_with_sizes():
                 })
                 progress.update(scan_task, advance=1)
 
-        # Display results in a table
         console.print(Rule("[bold cyan]Results[/]"))
         table = Table(title=f"Subfolders in [cyan]{target_directory.name}[/]", show_header=True, header_style="bold magenta", expand=True)
         table.add_column("Folder Name", style="dim cyan", width=40, no_wrap=False)
@@ -179,9 +162,8 @@ def list_folders_with_sizes():
             elif item['skipped'] > 0:
                 status = f"[yellow]{item['skipped']} item(s) skipped[/]"
             else:
-                 status = "[grey50]OK[/]" # Or leave blank: ""
+                 status = "[grey50]OK[/]"
 
-            # Handle potential wrapping issues if name is extremely long
             folder_name_text = Text(item['name'], overflow="fold")
 
             table.add_row(folder_name_text, item['size_str'], status)
@@ -219,7 +201,7 @@ def rename_folders_with_size():
     console.print(f"Scanning directory for renaming: [cyan]{target_directory}[/]\n")
 
     folders_to_process = []
-    folders_to_rename_info = [] # Stores dicts for actual rename candidates
+    folders_to_rename_info = []
     skipped_already_named = 0
     total_skipped_items_calc = 0
 
@@ -235,7 +217,6 @@ def rename_folders_with_size():
 
         console.print(f"Found {len(folders_to_process)} subfolders. Calculating sizes for renaming...")
 
-        # --- Calculate sizes with Progress Bar ---
         with Progress(
             TextColumn("[progress.description]{task.description}"), BarColumn(),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
@@ -266,17 +247,14 @@ def rename_folders_with_size():
                     total_skipped_items_calc += skipped
                     formatted_size = format_size(size_bytes)
                     new_folder_name = f"{folder_name} [{formatted_size}]"
-                    new_path = target_directory / new_folder_name # Use Path object joining
+                    new_path = target_directory / new_folder_name
 
-                    # Path length check (Windows MAX_PATH is often ~260)
                     if len(str(new_path)) > 240:
                          error_msg = "Resulting path too long"
                          console.print(f"   -> [yellow]Skipping:[/yellow] [cyan]'{folder_name}'[/] ({error_msg})")
-                         # Don't add to rename list, but advance progress
                          progress.update(calc_task, advance=1)
-                         continue # Skip to next folder
+                         continue
 
-                    # Add to list of candidates if no path length error
                     folders_to_rename_info.append({
                         "old_name": folder_name, "old_path": old_path,
                         "new_name": new_folder_name, "new_path": new_path,
@@ -287,7 +265,6 @@ def rename_folders_with_size():
                 except Exception as e:
                     error_msg = str(e)
                     console.print(f"\n   -> [[bold red]Error[/]] calculating size for [yellow]{folder_name}[/]: {e}")
-                    # Don't add to rename list, but advance progress
 
                 progress.update(calc_task, advance=1)
 
@@ -295,17 +272,16 @@ def rename_folders_with_size():
         console.print(f"\nCalculation complete. {skipped_already_named} folder(s) skipped as potentially already renamed.")
         if total_skipped_items_calc > 0:
              console.print(f"[yellow]Note:[/yellow] {total_skipped_items_calc} item(s) could not be accessed during size calculation.")
-        print("") # Use standard print for simple newline needed by Rich sometimes
+        print("")
 
         if not folders_to_rename_info:
             console.print("[yellow]No folders eligible for renaming found.[/]")
             return
 
-        # --- Confirmation Table ---
         console.print(Rule("[bold yellow]Proposed Renames[/]"))
         confirm_table = Table(title="Review Carefully!", show_header=True, header_style="bold magenta", expand=True)
         confirm_table.add_column("Current Name", style="dim cyan", no_wrap=False)
-        confirm_table.add_column(" ", justify="center") # Arrow column
+        confirm_table.add_column(" ", justify="center")
         confirm_table.add_column("Proposed New Name", style="green", no_wrap=False)
 
         for rename_info in folders_to_rename_info:
@@ -313,7 +289,6 @@ def rename_folders_with_size():
 
         console.print(confirm_table)
 
-        # Use Tkinter messagebox for confirmation still (critical safety step)
         root_confirm = tk.Tk(); root_confirm.withdraw(); root_confirm.attributes('-topmost', True)
         confirm = messagebox.askyesno(
             "Confirm Rename",
@@ -327,7 +302,6 @@ def rename_folders_with_size():
             console.print("[yellow]Rename operation cancelled by user.[/]")
             return
 
-        # --- Perform Renaming ---
         console.print(Rule("[bold orange_red1]Performing Renames[/]"))
         success_count = 0
         fail_count = 0
@@ -343,7 +317,7 @@ def rename_folders_with_size():
                  continue
 
             try:
-                old.rename(new) # Use Path.rename()
+                old.rename(new)
                 console.print(f"   -> [green]Renamed:[/green] '[cyan]{old_display}[/]' -> '[bold green]{new_display}[/]'")
                 success_count += 1
             except OSError as e:
@@ -353,7 +327,6 @@ def rename_folders_with_size():
                  console.print(f"   -> [bold red]Unexpected Error[/] renaming '[cyan]{old_display}[/]': {e}")
                  fail_count += 1
 
-        # --- Summary ---
         console.print(Rule("[bold cyan]Rename Summary[/]"))
         summary_table = Table(show_header=False, box=None, padding=(0,1))
         summary_table.add_column()
@@ -399,7 +372,6 @@ def analyze_and_rename_single_folder():
 
     if check_if_already_renamed(folder_name):
         console.print(f"\n[yellow]Folder '[cyan]{folder_name}[/]' appears to already have a size appended. Skipping rename proposal.[/]")
-        # Still calculate and show size
         try:
             with console.status("[bold green]Calculating size anyway..."):
                 size_bytes, skipped = get_folder_size(selected_folder_path)
@@ -407,7 +379,7 @@ def analyze_and_rename_single_folder():
             console.print(f"\nCalculated size: [bold green]{formatted_size}[/]" + (f" ([yellow]{skipped} items skipped[/])" if skipped else ""))
         except Exception as e:
             console.print(f"\n[bold red]Error calculating size:[/bold red] {e}")
-        return # Return to menu
+        return
 
     total_skipped_items = 0
     formatted_size = "[grey50]N/A[/]"
@@ -415,14 +387,13 @@ def analyze_and_rename_single_folder():
     new_full_path = None
 
     try:
-        # Use spinner for single folder calculation
         with console.status(f"[bold green]Calculating size for '{folder_name}'...", spinner="dots") as status:
             start_time = time.time()
             size_bytes, skipped = get_folder_size(selected_folder_path)
             total_skipped_items = skipped
             end_time = time.time()
             formatted_size = format_size(size_bytes)
-            status.update(f"[bold green]Calculation complete for '{folder_name}'[/]") # Final status message
+            status.update(f"[bold green]Calculation complete for '{folder_name}'[/]")
 
         console.print(f"Calculation finished in {end_time - start_time:.2f} seconds.")
         console.print(f"\nFolder: '[bold cyan]{folder_name}[/]'")
@@ -430,11 +401,9 @@ def analyze_and_rename_single_folder():
         if total_skipped_items > 0:
              console.print(f"[yellow]Note:[/yellow]   {total_skipped_items} item(s) inside could not be accessed.")
 
-        # --- Prepare for Renaming ---
         new_folder_name = f"{folder_name} [{formatted_size}]"
-        new_full_path = parent_dir / new_folder_name # Path object joining
+        new_full_path = parent_dir / new_folder_name
 
-        # --- Checks before proposing rename ---
         if len(str(new_full_path)) > 240:
             console.print("\n[yellow]Resulting path would be too long. Cannot propose rename.[/]")
             return
@@ -443,7 +412,6 @@ def analyze_and_rename_single_folder():
             console.print(f"\n[yellow]Cannot rename:[/yellow] A file or folder named '[cyan]{new_folder_name}[/]' already exists in the parent directory.")
             return
 
-        # --- Confirmation ---
         console.print(f"\n[yellow]Proposed rename:[/yellow] '[cyan]{folder_name}[/]' -> '[bold green]{new_folder_name}[/]'")
 
         root_confirm = tk.Tk(); root_confirm.withdraw(); root_confirm.attributes('-topmost', True)
@@ -460,7 +428,6 @@ def analyze_and_rename_single_folder():
             console.print("[yellow]Rename cancelled by user.[/]")
             return
 
-        # --- Perform Renaming ---
         console.print("\nAttempting to rename...")
         try:
             selected_folder_path.rename(new_full_path)
@@ -477,8 +444,6 @@ def analyze_and_rename_single_folder():
         console.print(f"\n[bold red]An unexpected error occurred during analysis:[/bold red] {e}")
 
 
-# --- Rich Main Menu Loop ---
-
 def display_menu():
     """Prints the main menu options using Rich Panel."""
     menu_text = (
@@ -494,10 +459,7 @@ def main():
     """Runs the main menu loop."""
     while True:
         display_menu()
-        # Use Rich's prompt if desired, or keep standard input
-        # from rich.prompt import Prompt
-        # choice = Prompt.ask("Enter your choice (1-4)", choices=["1", "2", "3", "4"], show_choices=False)
-        choice = input("Enter your choice (1-4): ").strip() # Standard input is fine too
+        choice = input("Enter your choice (1-4): ").strip()
 
         if choice == '1':
             list_folders_with_sizes()
@@ -511,18 +473,15 @@ def main():
         else:
             console.print("[bold red]Invalid choice.[/] Please enter 1, 2, 3, or 4.")
 
-        # Pause and prompt before showing menu again
         console.print("\n[dim]Press Enter to return to the menu...[/]")
-        input() # Wait for user to press Enter
+        input()
 
 
-# --- Main Execution ---
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
         console.print("\n[bold yellow]Operation cancelled by user (Ctrl+C). Exiting.[/]")
     except Exception as e:
-        # Catch any unexpected top-level errors
         console.print(f"\n[bold red]An critical error occurred:[/]")
-        console.print_exception(show_locals=False) # Print traceback using Rich
+        console.print_exception(show_locals=False)
