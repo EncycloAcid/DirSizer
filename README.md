@@ -1,6 +1,6 @@
 # 📁 Folder Size Utility
 
-A Python command-line tool to calculate folder sizes, display them in a human-readable format, and optionally rename folders to include their size information.
+A Python command-line tool to calculate folder sizes, display them in a readable format, and optionally rename folders to include their size information.
 
 ## Features
 
